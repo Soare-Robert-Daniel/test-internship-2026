@@ -75,12 +75,33 @@ Now, Hank needs you to take over the project and finish it.
 
 ## Task
 
-Hank has a list of ideas that he wants to implement in the application. Here are the main features that he wants to see in the final product:
+Hank has a list of features that he wants to see in the final product:
 
-1. Main dashboard where users can see all the active markets and their outcomes. All updated in real-time with filters like order by creation date, bet size, etc. (Since there can be many bets, make sure to implement pagination).
-2. User profile page where users can see their betting history and current bets. Also updated in real-time for the current bets. (Since a user can have many bets, make sure to implement pagination).
-3. The bet page with a graph showing the distribution of bets and the current odds for each outcome.
-4. Leaderboard showing the top users based on their winnings.
+### 1. Main Dashboard
+- Display all active markets, each showing its title, outcomes, current odds, and total bet amount.
+- Allow sorting by creation date, total bet size, or number of participants.
+- Allow filtering by market status (e.g., active, resolved).
+- Display 20 markets per page with next/previous navigation.
+- Update market odds and bet totals in real-time without requiring a page refresh.
+
+### 2. User Profile Page
+- Display the user's resolved bets, showing the market title, the outcome they bet on, and whether they won or lost.
+- Display the user's current active bets with their current odds, updated in real-time.
+- Paginate each list separately (20 items per page).
+
+### 3. Market Detail Page
+- Display a chart showing the percentage of total bets placed on each outcome.
+- Display the current odds for each outcome.
+- Allow the user to select an outcome and place a bet with a specified amount.
+- Validate that the bet amount is a positive number before submission.
+
+### 4. Leaderboard
+- Rank users by their total winnings in descending order.
+- Display each user's name and total winnings.
+
+### Cross-cutting requirements
+- **Real-time updates**: The dashboard and user profile should reflect new bets and odds changes within a few seconds, without requiring a page refresh.
+- **Pagination**: Any list that can grow unbounded must be paginated (20 items per page with next/previous navigation).
 
 ### Optional features
 
@@ -92,7 +113,9 @@ Hank also thinks that the users will want to use bots to place bets, so the app 
 
 Hint: Think if you can reuse the same endpoints for both the frontend and the API, this will make your life easier and will also make the application more consistent.
 
-## Other information
+## Bonus task
+
+This task is not mandatory, but it will be a great addition.
 
 - This test will use Bun as the runtime environment for the backend, and sqlite as the database. There is no need for other types of databases or runtime environments. If your application is too slow in your tests, think how you can optimize before doing radical things like adding a new service (e.g. redis) or changing the database.
 - You can design the database table structure as you see fit, in case you change the existing one, make sure to add the migration file for it.
@@ -114,6 +137,19 @@ Documentation references:
 - https://tanstack.com/form/latest
 - https://ui.shadcn.com/docs
 - https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events
+
+### Recommended Reading
+
+Before diving into the code, we recommend familiarizing yourself with the following topics:
+
+- **REST API design** — How to structure endpoints, use HTTP methods (GET, POST, PUT, DELETE), and return appropriate status codes.
+- **Error handling in web applications** — How to handle errors gracefully on both the client and server. Display user-friendly error messages instead of crashing or showing raw errors.
+- **Form validation** — Validate user input on both the client (for instant feedback) and the server (for security). Never trust data coming from the frontend.
+- **Pagination patterns** — Offset-based vs. cursor-based pagination and when to use each.
+- **Real-time updates** — Understand the difference between polling, WebSockets, and Server-Sent Events (SSE), and when each is appropriate.
+- **UI/UX best practices** — Loading states, empty states, confirmation dialogs for destructive actions, and responsive design.
+- **Database design basics** — Primary keys, foreign keys, indexes, and why they matter for query performance.
+- **Authentication basics** — Sessions vs. tokens, password hashing, and protecting routes from unauthorized access.
 
 ### Install dependencies
 
