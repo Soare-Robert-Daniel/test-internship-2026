@@ -116,7 +116,6 @@ Hank has a list of features that he wants to see in the final product:
 - Update user balances accordingly
 
 ### 8. User Balance Tracking
-- Add `balance` field to users table
 - Users start with initial balance (e.g., 1000)
 - Deduct bet amount when placing bet
 - Add winnings when market resolves
