@@ -73,6 +73,8 @@ Here are the things that John managed to do before quitting programming:
 
 Now, Hank needs you to take over the project and finish it.
 
+![John current work](./assets/demo.png)
+
 ## Task
 
 Hank has a list of features that he wants to see in the final product:
@@ -99,6 +101,26 @@ Hank has a list of features that he wants to see in the final product:
 - Rank users by their total winnings in descending order.
 - Display each user's name and total winnings.
 
+### 5. Role System
+- We need an admin with the power to resolve a bet.
+- The dashboard and bets will show a modified version that allows an admin to set an outcome for a bet.
+
+### 6. Admin Market Resolution
+- Mark a market as resolved with winning outcome
+- Requires admin authentication
+- Only allow resolving active markets
+
+### 7. Payout Distribution
+- Calculate winners (bets matching the resolved outcome)
+- Distribute total bet pool to winners proportionally by their stake
+- Update user balances accordingly
+
+### 8. User Balance Tracking
+- Add `balance` field to users table
+- Users start with initial balance (e.g., 1000)
+- Deduct bet amount when placing bet
+- Add winnings when market resolves
+
 ### Cross-cutting requirements
 - **Real-time updates**: The dashboard and user profile should reflect new bets and odds changes within a few seconds, without requiring a page refresh.
 - **Pagination**: Any list that can grow unbounded must be paginated (20 items per page with next/previous navigation).
@@ -107,9 +129,9 @@ Hank has a list of features that he wants to see in the final product:
 
 Hank also thinks that the users will want to use bots to place bets, so the app will need to have an API that allows users to place bets programmatically. So users should be able to generate an API key from their profile page and use it to place bets using the API. So the backend will need to have endpoints similar to the ones in the frontend that allow users to:
 - Create markets
+- List markets
 - Place bets
 - View outcomes
-- List markets
 
 Hint: Think if you can reuse the same endpoints for both the frontend and the API, this will make your life easier and will also make the application more consistent.
 
@@ -128,15 +150,6 @@ This task is not mandatory, but it will be a great addition.
 1. Make sure that project is running locally on your machine. The Bun runtime is cross-platform, so you should be able to run it on any operating system. If you encounter any issues, you can also switch the runtime to Node.js, but make sure to remove the Bun-specific code and dependencies.
 2. Try to analyze similar products like Polymarket and Kalshi to get a better understanding of the features and functionalities that you need to implement. Since this is a simple project, do not overcomplicate things by adding features that are not necessary.
 3. Think first as an user. You may write great code, or use the fanciest libraries, but the people who will use it will not care. They just want to bet and your bugs or UX idea should not get in the way of that.
-
-Documentation references:
-- https://bun.sh/docs
-- https://tanstack.com/router/latest
-- https://tanstack.com/query/latest
-- https://tanstack.com/table/latest
-- https://tanstack.com/form/latest
-- https://ui.shadcn.com/docs
-- https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events
 
 ### Recommended Reading
 
