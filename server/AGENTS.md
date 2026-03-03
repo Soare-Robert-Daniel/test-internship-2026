@@ -1,5 +1,5 @@
 ---
-description: Prediction Markets API Server - Bun + SQLite + Drizzle
+description: Prediction Markets API Server - Bun + Elysia + SQLite + Drizzle
 globs: "src/**/*.ts, index.ts, test.spec.ts, package.json"
 alwaysApply: true
 ---
@@ -12,15 +12,15 @@ This is a Bun-based REST API server for a prediction markets platform. It handle
 
 **Tech Stack:**
 - **Runtime**: Bun (not Node.js)
+- **Framework**: Elysia (with @elysiajs/cors)
 - **Database**: SQLite with Drizzle ORM
-- **API**: Custom HTTP server with `Bun.serve()`
 - **Testing**: Bun's built-in test framework
 
 ## Key Commands
 
 ### Development
 - `bun run dev` - Start hot-reload server on http://localhost:4001
-- `bun test` - Run all tests in `*.spec.ts` files
+- `bun test` - Run all tests in `*.test.ts` files
 - `bun reset-password.ts <email|id>` - Reset user password and generate new one
 
 ### Database
@@ -36,31 +36,34 @@ This is a Bun-based REST API server for a prediction markets platform. It handle
 ```
 src/
 ├── api/
-│   └── handlers.ts          # Request handlers for all routes
+│   ├── handlers.ts            # Route handler functions (Elysia context style)
+│   ├── auth.routes.ts         # Auth route group (/api/auth)
+│   └── markets.routes.ts      # Markets route group (/api/markets) with auth guard
 ├── db/
-│   ├── schema.ts            # Drizzle schema definitions
-│   ├── index.ts             # Database connection
-│   ├── migrate.ts           # Migration runner
-│   └── seed.ts              # Sample data seeding
-└── lib/
-    ├── auth.ts              # Password hashing & token creation
-    ├── validation.ts        # Input validation for requests
-    └── odds.ts              # Odds calculation logic
+│   ├── schema.ts              # Drizzle schema definitions
+│   ├── index.ts               # Database connection
+│   ├── migrate.ts             # Migration runner
+│   └── seed.ts                # Sample data seeding
+├── lib/
+│   ├── auth.ts                # Password hashing & token creation
+│   ├── validation.ts          # Input validation for requests
+│   └── odds.ts                # Odds calculation logic
+└── middleware/
+    └── auth.middleware.ts      # Elysia derive plugin for Bearer token auth
 
-index.ts                      # Main server entry point
-test.spec.ts                  # API endpoint tests
-reset-password.ts             # Password reset utility
+index.ts                        # Main server entry point (Elysia app)
+reset-password.ts               # Password reset utility
 ```
 
 ## API Routes
 
 All endpoints at `http://localhost:4001`:
 
-### Authentication
+### Authentication (`src/api/auth.routes.ts`)
 - `POST /api/auth/register` - Register new user → `201`
 - `POST /api/auth/login` - Login user → `200`
 
-### Markets
+### Markets (`src/api/markets.routes.ts`)
 - `GET /api/markets?status=active|resolved` - List markets → `200`
 - `POST /api/markets` - Create market (auth required) → `201`
 - `GET /api/markets/:id` - Get market details → `200`
@@ -109,12 +112,6 @@ All endpoints at `http://localhost:4001`:
 
 Tokens are base64-encoded JSON with `userId` and `iat` (issued at).
 
-**Example token decode:**
-```
-eyJ1c2VySWQiOjEsImlhdCI6MTc3MjQ3NTEyMH0=
-→ {"userId":1,"iat":1772475120}
-```
-
 Pass token in header:
 ```
 Authorization: Bearer <token>
@@ -122,14 +119,25 @@ Authorization: Bearer <token>
 
 ## Common Patterns
 
-### Handler Structure
+### Handler Structure (Elysia context style)
 ```ts
-export async function handleSomething(req: Request) {
-  const body = await parseJson(req);
-  const user = await getUserFromRequest(req); // Auth required
-  // Validation → DB query → Response
-  return new Response(JSON.stringify(data), { status: 201, headers });
+export async function handleSomething({ body, params, set, user }) {
+  // body/params/query auto-parsed by Elysia schemas
+  // user injected by auth middleware derive
+  // Validation → DB query → return object (auto-serialized)
+  set.status = 201;
+  return { id, ...fields };
 }
+```
+
+### Auth Guard
+Protected routes use Elysia `guard` with `beforeHandle` that checks `user` from auth middleware:
+```ts
+.guard({
+  beforeHandle({ user, set }) {
+    if (!user) { set.status = 401; return { error: "Unauthorized" }; }
+  }
+}, (app) => app.post("/", protectedHandler))
 ```
 
 ### Response Format
@@ -159,3 +167,4 @@ All tests verify:
 3. **Environment**: Create `.env` file (Bun auto-loads it)
 4. **Debugging**: Add `console.log()` - output shows in terminal
 5. **Password reset**: Use `bun reset-password.ts user@example.com` to generate new password
+6. **Elysia validation**: Body/params/query schemas use `t` from Elysia (TypeBox). Business validation stays in `src/lib/validation.ts`

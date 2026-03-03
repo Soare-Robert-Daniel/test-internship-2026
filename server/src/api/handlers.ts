@@ -10,7 +10,6 @@ import {
   hashPassword,
   verifyPassword,
   createSessionToken,
-  getUserFromToken,
 } from "../lib/auth";
 import {
   validateRegistration,
@@ -19,116 +18,62 @@ import {
   validateBet,
 } from "../lib/validation";
 
-/**
- * Parse JSON from request
- */
-async function parseJson(req: Request) {
-  try {
-    return await req.json();
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Get user from request headers
- */
-async function getUserFromRequest(req: Request) {
-  const authHeader = req.headers.get("Authorization");
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return null;
-  }
-  const token = authHeader.substring(7);
-  return await getUserFromToken(token);
-}
-
-/**
- * Register a new user
- */
-export async function handleRegister(req: Request) {
-  const body = await parseJson(req);
-  if (!body) {
-    return new Response(JSON.stringify({ error: "Invalid request" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-
+export async function handleRegister({
+  body,
+  set,
+}: {
+  body: { username: string; email: string; password: string };
+  set: { status: number };
+}) {
   const { username, email, password } = body;
   const errors = validateRegistration(username, email, password);
 
   if (errors.length > 0) {
-    return new Response(JSON.stringify({ errors }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" },
-    });
+    set.status = 400;
+    return { errors };
   }
 
-  // Check if user exists
   const existingUser = await db.query.usersTable.findFirst({
     where: (users, { or, eq }) =>
       or(eq(users.email, email), eq(users.username, username)),
   });
 
   if (existingUser) {
-    return new Response(
-      JSON.stringify({
-        errors: [{ field: "email", message: "User already exists" }],
-      }),
-      {
-        status: 409,
-        headers: { "Content-Type": "application/json" },
-      }
-    );
+    set.status = 409;
+    return { errors: [{ field: "email", message: "User already exists" }] };
   }
 
   const passwordHash = await hashPassword(password);
 
   const newUser = await db
     .insert(usersTable)
-    .values({
-      username,
-      email,
-      passwordHash,
-    })
+    .values({ username, email, passwordHash })
     .returning();
 
   const token = createSessionToken(newUser[0].id);
 
-  return new Response(
-    JSON.stringify({
-      id: newUser[0].id,
-      username: newUser[0].username,
-      email: newUser[0].email,
-      token,
-    }),
-    {
-      status: 201,
-      headers: { "Content-Type": "application/json" },
-    }
-  );
+  set.status = 201;
+  return {
+    id: newUser[0].id,
+    username: newUser[0].username,
+    email: newUser[0].email,
+    token,
+  };
 }
 
-/**
- * Login a user
- */
-export async function handleLogin(req: Request) {
-  const body = await parseJson(req);
-  if (!body) {
-    return new Response(JSON.stringify({ error: "Invalid request" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-
+export async function handleLogin({
+  body,
+  set,
+}: {
+  body: { email: string; password: string };
+  set: { status: number };
+}) {
   const { email, password } = body;
   const errors = validateLogin(email, password);
 
   if (errors.length > 0) {
-    return new Response(JSON.stringify({ errors }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" },
-    });
+    set.status = 400;
+    return { errors };
   }
 
   const user = await db.query.usersTable.findFirst({
@@ -136,59 +81,35 @@ export async function handleLogin(req: Request) {
   });
 
   if (!user || !(await verifyPassword(password, user.passwordHash))) {
-    return new Response(
-      JSON.stringify({ error: "Invalid email or password" }),
-      {
-        status: 401,
-        headers: { "Content-Type": "application/json" },
-      }
-    );
+    set.status = 401;
+    return { error: "Invalid email or password" };
   }
 
   const token = createSessionToken(user.id);
 
-  return new Response(
-    JSON.stringify({
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      token,
-    }),
-    {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    }
-  );
+  return {
+    id: user.id,
+    username: user.username,
+    email: user.email,
+    token,
+  };
 }
 
-/**
- * Create a new market
- */
-export async function handleCreateMarket(req: Request) {
-  const user = await getUserFromRequest(req);
-  if (!user) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-
-  const body = await parseJson(req);
-  if (!body) {
-    return new Response(JSON.stringify({ error: "Invalid request" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-
+export async function handleCreateMarket({
+  body,
+  set,
+  user,
+}: {
+  body: { title: string; description?: string; outcomes: string[] };
+  set: { status: number };
+  user: typeof usersTable.$inferSelect;
+}) {
   const { title, description, outcomes } = body;
-  const errors = validateMarketCreation(title, description, outcomes);
+  const errors = validateMarketCreation(title, description || "", outcomes);
 
   if (errors.length > 0) {
-    return new Response(JSON.stringify({ errors }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" },
-    });
+    set.status = 400;
+    return { errors };
   }
 
   const market = await db
@@ -211,27 +132,22 @@ export async function handleCreateMarket(req: Request) {
     )
     .returning();
 
-  return new Response(
-    JSON.stringify({
-      id: market[0].id,
-      title: market[0].title,
-      description: market[0].description,
-      status: market[0].status,
-      outcomes: outcomeIds,
-    }),
-    {
-      status: 201,
-      headers: { "Content-Type": "application/json" },
-    }
-  );
+  set.status = 201;
+  return {
+    id: market[0].id,
+    title: market[0].title,
+    description: market[0].description,
+    status: market[0].status,
+    outcomes: outcomeIds,
+  };
 }
 
-/**
- * Get all markets with basic info
- */
-export async function handleListMarkets(req: Request) {
-  const url = new URL(req.url);
-  const statusFilter = url.searchParams.get("status") || "active";
+export async function handleListMarkets({
+  query,
+}: {
+  query: { status?: string };
+}) {
+  const statusFilter = query.status || "active";
 
   const markets = await db.query.marketsTable.findMany({
     where: eq(marketsTable.status, statusFilter),
@@ -245,7 +161,6 @@ export async function handleListMarkets(req: Request) {
     },
   });
 
-  // Calculate total bets and odds for each outcome
   const enrichedMarkets = await Promise.all(
     markets.map(async (market) => {
       const betsPerOutcome = await Promise.all(
@@ -255,7 +170,10 @@ export async function handleListMarkets(req: Request) {
             .from(betsTable)
             .where(eq(betsTable.outcomeId, outcome.id));
 
-          const totalAmount = totalBets.reduce((sum, bet) => sum + bet.amount, 0);
+          const totalAmount = totalBets.reduce(
+            (sum, bet) => sum + bet.amount,
+            0
+          );
           return { outcomeId: outcome.id, totalBets: totalAmount };
         })
       );
@@ -291,18 +209,18 @@ export async function handleListMarkets(req: Request) {
     })
   );
 
-  return new Response(JSON.stringify(enrichedMarkets), {
-    status: 200,
-    headers: { "Content-Type": "application/json" },
-  });
+  return enrichedMarkets;
 }
 
-/**
- * Get market detail
- */
-export async function handleGetMarket(req: Request, marketId: number) {
+export async function handleGetMarket({
+  params,
+  set,
+}: {
+  params: { id: number };
+  set: { status: number };
+}) {
   const market = await db.query.marketsTable.findFirst({
-    where: eq(marketsTable.id, marketId),
+    where: eq(marketsTable.id, params.id),
     with: {
       creator: {
         columns: { username: true },
@@ -314,10 +232,8 @@ export async function handleGetMarket(req: Request, marketId: number) {
   });
 
   if (!market) {
-    return new Response(JSON.stringify({ error: "Market not found" }), {
-      status: 404,
-      headers: { "Content-Type": "application/json" },
-    });
+    set.status = 404;
+    return { error: "Market not found" };
   }
 
   const betsPerOutcome = await Promise.all(
@@ -332,67 +248,54 @@ export async function handleGetMarket(req: Request, marketId: number) {
     })
   );
 
-  const totalMarketBets = betsPerOutcome.reduce((sum, b) => sum + b.totalBets, 0);
-
-  return new Response(
-    JSON.stringify({
-      id: market.id,
-      title: market.title,
-      description: market.description,
-      status: market.status,
-      creator: market.creator?.username,
-      outcomes: market.outcomes.map((outcome) => {
-        const outcomeBets =
-          betsPerOutcome.find((b) => b.outcomeId === outcome.id)?.totalBets || 0;
-        const odds =
-          totalMarketBets > 0
-            ? Number(((outcomeBets / totalMarketBets) * 100).toFixed(2))
-            : 0;
-
-        return {
-          id: outcome.id,
-          title: outcome.title,
-          odds,
-          totalBets: outcomeBets,
-        };
-      }),
-      totalMarketBets,
-    }),
-    {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    }
+  const totalMarketBets = betsPerOutcome.reduce(
+    (sum, b) => sum + b.totalBets,
+    0
   );
+
+  return {
+    id: market.id,
+    title: market.title,
+    description: market.description,
+    status: market.status,
+    creator: market.creator?.username,
+    outcomes: market.outcomes.map((outcome) => {
+      const outcomeBets =
+        betsPerOutcome.find((b) => b.outcomeId === outcome.id)?.totalBets || 0;
+      const odds =
+        totalMarketBets > 0
+          ? Number(((outcomeBets / totalMarketBets) * 100).toFixed(2))
+          : 0;
+
+      return {
+        id: outcome.id,
+        title: outcome.title,
+        odds,
+        totalBets: outcomeBets,
+      };
+    }),
+    totalMarketBets,
+  };
 }
 
-/**
- * Place a bet
- */
-export async function handlePlaceBet(req: Request, marketId: number) {
-  const user = await getUserFromRequest(req);
-  if (!user) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-
-  const body = await parseJson(req);
-  if (!body) {
-    return new Response(JSON.stringify({ error: "Invalid request" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-
+export async function handlePlaceBet({
+  params,
+  body,
+  set,
+  user,
+}: {
+  params: { id: number };
+  body: { outcomeId: number; amount: number };
+  set: { status: number };
+  user: typeof usersTable.$inferSelect;
+}) {
+  const marketId = params.id;
   const { outcomeId, amount } = body;
   const errors = validateBet(amount);
 
   if (errors.length > 0) {
-    return new Response(JSON.stringify({ errors }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" },
-    });
+    set.status = 400;
+    return { errors };
   }
 
   const market = await db.query.marketsTable.findFirst({
@@ -400,17 +303,13 @@ export async function handlePlaceBet(req: Request, marketId: number) {
   });
 
   if (!market) {
-    return new Response(JSON.stringify({ error: "Market not found" }), {
-      status: 404,
-      headers: { "Content-Type": "application/json" },
-    });
+    set.status = 404;
+    return { error: "Market not found" };
   }
 
   if (market.status !== "active") {
-    return new Response(JSON.stringify({ error: "Market is not active" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" },
-    });
+    set.status = 400;
+    return { error: "Market is not active" };
   }
 
   const outcome = await db.query.marketOutcomesTable.findFirst({
@@ -421,10 +320,8 @@ export async function handlePlaceBet(req: Request, marketId: number) {
   });
 
   if (!outcome) {
-    return new Response(JSON.stringify({ error: "Outcome not found" }), {
-      status: 404,
-      headers: { "Content-Type": "application/json" },
-    });
+    set.status = 404;
+    return { error: "Outcome not found" };
   }
 
   const bet = await db
@@ -437,17 +334,12 @@ export async function handlePlaceBet(req: Request, marketId: number) {
     })
     .returning();
 
-  return new Response(
-    JSON.stringify({
-      id: bet[0].id,
-      userId: bet[0].userId,
-      marketId: bet[0].marketId,
-      outcomeId: bet[0].outcomeId,
-      amount: bet[0].amount,
-    }),
-    {
-      status: 201,
-      headers: { "Content-Type": "application/json" },
-    }
-  );
+  set.status = 201;
+  return {
+    id: bet[0].id,
+    userId: bet[0].userId,
+    marketId: bet[0].marketId,
+    outcomeId: bet[0].outcomeId,
+    amount: bet[0].amount,
+  };
 }
