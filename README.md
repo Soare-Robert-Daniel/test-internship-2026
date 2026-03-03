@@ -8,7 +8,7 @@ Since we are a web company, the challenge will be in creating a web application;
 
 ### Deadline
 
-The submission deadline for this test is 11:59 PM on March 21, 2026. Please make sure to submit your application before the deadline to be considered for the internship.
+The submission deadline for this test is 11:59 PM on May 21, 2026. Please make sure to submit your application before the deadline to be considered for the internship.
 
 ### I do not know web development, can I still do the test?
 
