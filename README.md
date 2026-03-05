@@ -6,19 +6,21 @@ This is the challenge for the Themeisle Internship Test for 2026. The goal of th
 
 Since we are a web company, the challenge will be in creating a web application; and main subject of it will be a simple prediction market. The application should allow users to create and participate in prediction markets on various topics. Users should be able to create markets, place bets, and view the outcomes of the markets.
 
-### Deadline
+The requirements have been crafted to be as close as possible to the tasks and workflows we encounter on a daily basis. If you enjoyed solving this challenge, you might find the work during the internship interesting as well.
 
-The submission deadline for this test is 11:59 PM on May 21, 2026. Please make sure to submit your application before the deadline to be considered for the internship.
-
-### I do not know web development, can I still do the test?
-
-Yes. With the rise of AI tools, the entry barrier for web development is much lower than before. You can use AI tools to assist you in the development process.
-
-### Why prediction markets?
+#### _Why a prediction markets web app?_
 
 With the popular rise of platforms like Polymarket and Kalshi, we thought it would be an interesting challenge compared to the usual ones like building a to-do list, weather app, or a blog.
 
 We need to keep in mind that the current LLM models are very powerful, thus the challenge might be overwhelming at first glance. However, we encourage you to break down the problem into smaller, manageable tasks. The test is made around basic idea of web development, so there will be no need to implement complex algorithms. Focus on creating a functional and user-friendly application that meets the requirements.
+
+### Deadline
+
+The submission deadline for this test is **11:59 PM on May 17, 2026**. Please make sure to submit your application before the deadline to be considered for the internship.
+
+### I do not know web development, can I still do the test?
+
+Yes. With the rise of AI tools, the entry barrier for web development is much lower than before. You can use AI tools to assist you in the development process.
 
 ### Usage of AI tools
 
@@ -107,8 +109,8 @@ Hank has a list of features that he wants to see in the final product:
 
 ### 6. Admin Market Resolution
 - Mark a market as resolved with winning outcome
+- Archive a market and distribute the remaining funds back to the bettor(s)
 - Requires admin authentication
-- Only allow resolving active markets
 
 ### 7. Payout Distribution
 - Calculate winners (bets matching the resolved outcome)
@@ -135,6 +137,16 @@ Hank also thinks that the users will want to use bots to place bets, so the app 
 - View outcomes
 
 Hint: Think if you can reuse the same endpoints for both the frontend and the API, this will make your life easier and will also make the application more consistent.
+
+## Other Clarifications
+
+- **You’re free to change the UI.** Feel welcome to customize the existing interface to match your style, or simply keep it as-is and continue building on top of it.
+
+- **No extra services are required.** This challenge can be completed without additional infrastructure such as Redis or MongoDB. If you *do* decide to add services, please include them via **Docker Compose** and make sure the project can be started easily.
+
+- **Keep the project easy to run.** We’ll review both the code and how the application behaves, so please provide clear, minimal steps to spin up the project (e.g., `README` instructions on `./submission` and/or `docker compose up`). Review time is limited, so straightforward setup will help us evaluate your submission fairly.
+
+- **Backend stack is flexible, within reason.** The provided backend uses **Bun + Elysia**. You may switch to another backend/framework (e.g., Laravel), but if you do, we recommend using **Docker Compose** for the setup. In general, we encourage sticking to the provided stack or a widely used, well-documented framework.
 
 ### How to start
 

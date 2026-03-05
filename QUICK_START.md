@@ -12,10 +12,10 @@ cd client && bun install && cd ..
 ```bash
 cd server
 
-# Generate migrations from schema
+# Generate migrations from schema if DB is not present.
 bun run db:generate
 
-# Apply migrations to create tables
+# Apply migrations to create tables (the DB needs to be created before)
 bun run db:migrate
 
 # (OPTIONAL) Seed with test data & users
